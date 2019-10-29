@@ -75,10 +75,7 @@ def legacy_region_name(region):
             return ret
     raise RuntimeError(f'Cannot find legacy region name for region :"{region}"')
 def recoil_bins_2016():
-    return [ 250.,  280.,  310.,  340.,  370.,  400.,  
-             430.,  470.,  510., 550.,  590.,  640.,  
-             690.,  740.,  790.,  840.,  900.,  960., 
-             1020., 1090., 1160., 1250., 1400.]
+    return [250,300,350,400,500,600,750,1000]
 
 
 def legacy_limit_input(acc, outdir='./output'):
