@@ -603,6 +603,12 @@ def monojet_regions(cfg):
 def fitfun(x, a, b, c):
     return a * np.exp(-b * x) + c
 
+def fitfun_photon(x, a1, b1, c1, a2, b2):
+    f1 = a1 * np.exp(-b1*x) + c1
+    f2 = np.exp(-a2*(x-b2)*(x-b2))
+    f2[x>b2] = 1
+    return f1*f2
+
 def theory_weights_monojet(weights, df, evaluator, gen_v_pt):
     if df['is_lo_w']:
         if extract_year(df['dataset']) == 2016:
@@ -621,7 +627,7 @@ def theory_weights_monojet(weights, df, evaluator, gen_v_pt):
     elif df['is_nlo_z']:
         theory_weights = evaluator["ewk_nlo_z"](gen_v_pt)
     elif df['is_lo_g']:
-        theory_weights = fitfun(gen_v_pt, 1.159, 1.944e-3, 1.0) * evaluator["ewk_nlo_g"](gen_v_pt)
+        theory_weights = fitfun_photon(gen_v_pt, 1.065, 1.272e-3, 0.823, 1.013e-5, 230.92) * evaluator["ewk_nlo_g"](gen_v_pt)
     else:
         theory_weights = np.ones(df.size)
 
