@@ -6,6 +6,8 @@ from bucoffea.helpers import min_dphi_jet_met, dphi
 from bucoffea.helpers.dataset import (is_lo_g, is_lo_g_ewk, is_lo_w, is_lo_z,
                                       is_nlo_g,is_nlo_g_ewk, is_nlo_w, is_nlo_z,)
 from bucoffea.helpers.gen import (fill_gen_v_info,
+                                  setup_gen_jets,
+                                  setup_lhe_particles,
                                   setup_dressed_gen_candidates,
                                   setup_gen_candidates,setup_lhe_cleaned_genjets)
 
@@ -117,11 +119,18 @@ class lheVProcessor(processor.ProcessorABC):
             fill_gen_v_info(df, gen, dressed)
             tags.extend(['dress','combined'])
         elif is_lo_g(dataset) or is_nlo_g(dataset) or is_lo_g_ewk(dataset) or is_nlo_g_ewk(dataset):
-            photons = gen[(gen.status==1)&(gen.pdg==22)]
+            photons = gen[(gen.status==1)&(gen.flag&1==1)&(gen.pdg==22)&(abs(gen.eta)<1.46)]
+            genjets = setup_gen_jets(df)
+            genjets = genjets[~genjets.match(photons[photons.pt.argmax()],deltaRCut=0.4)]
+            lhe = setup_lhe_particles(df)
+            lhe_photons = lhe[lhe.pdg==22]
+            lhe_partons = lhe[(np.abs(lhe.pdg) < 7) | (np.abs(lhe.pdg) == 9) | (np.abs(lhe.pdg) == 21)]
+            lhe_parton_photon_pairs = lhe_photons.cross(lhe_partons)
             df['gen_v_pt_stat1'] = photons.pt.max()
             df['gen_v_phi_stat1'] = photons[photons.pt.argmax()].phi.max()
-            df['gen_v_pt_lhe'] = df['LHE_Vpt']
-            df['gen_v_phi_lhe'] = np.zeros(df.size)
+            df[f'gen_v_pt_lhe']  = lhe_photons.pt.max()
+            df[f'gen_v_phi_lhe'] = lhe_photons[lhe_photons.pt.argmax()].phi.max()
+            df[f'minDR_lhe_parton_photon'] = lhe_parton_photon_pairs.i0.p4.delta_r(lhe_parton_photon_pairs.i1.p4).min()
 
         dijet = genjets[:,:2].distincts()
         mjj = dijet.mass.max()
@@ -149,6 +158,9 @@ class lheVProcessor(processor.ProcessorABC):
                                     )
 
             mask_monojet = monojet_sel.all(*monojet_sel.names)
+            # Apply manual DR>0.4 Cut on GJets sample
+            if is_lo_g(dataset) or is_nlo_g(dataset) or is_lo_g_ewk(dataset) or is_nlo_g_ewk(dataset):
+                mask_monojet = mask_monojet * (df[f'minDR_lhe_parton_photon']>0.4)
 
             output[f'gen_vpt_monojet_{tag}'].fill(
                                     dataset=dataset,
