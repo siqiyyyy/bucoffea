@@ -15,7 +15,8 @@ COPY . /home/docker/bucoffea
 WORKDIR /home/docker
 
 # Run some bash commands to install packages
-RUN pip install -e bucoffea
+#RUN pip install -e bucoffea
+RUN touch hello-world
 
 # Run container with user docker
 USER docker
