@@ -6,18 +6,24 @@ FROM rootproject/root-conda:latest
 # Build the image as root user
 USER root
 
+# Using bash as the default shell for RUN
+SHELL ["/bin/bash", "-c"]
+
 # set the non-interactive mode for apt-get
 ENV DEBIAN_FRONTEND noninteractive
 
-COPY . /home/docker/bucoffea
+# Run some bash commands to install base packages
+RUN source ~/.bashrc && \
+	apt update && \
+	apt install -y apt-utils && \
+	apt install -y libcairo2-dev && \
+	pip install pycairo
+
+COPY . /bucoffea
 
 # Set the default working directory when a container is launched
-WORKDIR /home/docker
+WORKDIR /bucoffea
 
-# Run some bash commands to install packages
-#RUN pip install -e bucoffea
-RUN touch hello-world
-
-# Run container with user docker
-USER docker
-
+# install bucoffea
+RUN source ~/.bashrc && \
+	pip install -e /bucoffea
